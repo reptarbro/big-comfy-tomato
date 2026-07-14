@@ -1,0 +1,686 @@
+<title>The Big Comfy Tomato</title>
+<style>
+  :root {
+    --tomato: #E23B2E; --tomato-deep: #9E2A1E; --tomato-hi: #F26A5A;
+    --calyx: #5FA463; --calyx-deep: #3E7A49; --marigold: #E8A13C;
+    --wall: #F7EAD2; --wall-2: #EBD3AC; --ink: #3A2620; --ink-soft: #6E5546;
+    --panel: #FFFDF8; --panel-line: #E4D0AE; --lamp: #FFDF9C; --shadow: rgba(58,38,32,.16);
+    --focus-ring: #2C6EE0; --sky: #7FB2D9;
+    --font-display: "Arial Rounded MT Bold", "Trebuchet MS", ui-rounded, "Segoe UI", system-ui, sans-serif;
+    --font-body: ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --tomato: #F0503F; --tomato-deep: #B4342A; --tomato-hi: #FF7C6B;
+      --calyx: #6FBE74; --calyx-deep: #4E9256; --marigold: #F0AE4E;
+      --wall: #2E1D1B; --wall-2: #3C2622; --ink: #F6E7D6; --ink-soft: #CDB6A4;
+      --panel: #38251F; --panel-line: #4E332B; --lamp: #6a4a24; --shadow: rgba(0,0,0,.42);
+    }
+  }
+  :root[data-theme="dark"] {
+    --tomato: #F0503F; --tomato-deep: #B4342A; --tomato-hi: #FF7C6B;
+    --calyx: #6FBE74; --calyx-deep: #4E9256; --marigold: #F0AE4E;
+    --wall: #2E1D1B; --wall-2: #3C2622; --ink: #F6E7D6; --ink-soft: #CDB6A4;
+    --panel: #38251F; --panel-line: #4E332B; --lamp: #6a4a24; --shadow: rgba(0,0,0,.42);
+  }
+  :root[data-theme="light"] {
+    --tomato: #E23B2E; --tomato-deep: #9E2A1E; --tomato-hi: #F26A5A;
+    --calyx: #5FA463; --calyx-deep: #3E7A49; --marigold: #E8A13C;
+    --wall: #F7EAD2; --wall-2: #EBD3AC; --ink: #3A2620; --ink-soft: #6E5546;
+    --panel: #FFFDF8; --panel-line: #E4D0AE; --lamp: #FFDF9C; --shadow: rgba(58,38,32,.16);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .stage {
+    min-height: 100vh; font-family: var(--font-body); color: var(--ink);
+    background:
+      radial-gradient(140% 100% at 84% 4%, color-mix(in srgb, var(--lamp) 60%, transparent), transparent 42%),
+      radial-gradient(120% 90% at 50% 118%, color-mix(in srgb, var(--tomato) 16%, transparent), transparent 55%),
+      linear-gradient(180deg, var(--wall) 0%, var(--wall-2) 100%);
+    padding: 22px 20px 96px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; position: relative; overflow: hidden;
+  }
+
+  .room-art, .lamp, .plant { position: absolute; pointer-events: none; opacity: .9; z-index: 0; }
+  .room-art { top: 96px; left: 4%; width: 88px; height: 110px; }
+  .lamp { top: 20px; right: 6%; width: 70px; height: 156px; }
+  .plant { bottom: 0; left: 3%; width: 118px; height: 176px; opacity:.9; transform-origin: bottom center; transition: transform .8s ease; }
+  .plant.perked { transform: scale(1.06) translateY(-3px); }
+  @media (max-width: 900px){ .room-art,.lamp,.plant,.trex{ display:none; } }
+
+  .toolbar { width: 100%; max-width: 1080px; display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
+  .icon-btn {
+    background: var(--panel); color: var(--ink); border:1px solid var(--panel-line);
+    border-radius: 11px; padding: 8px 13px; box-shadow: 0 3px 0 var(--panel-line); font-size: 13px;
+    font-family: var(--font-body); cursor: pointer;
+  }
+  .icon-btn:hover { filter: brightness(1.02); }
+  .icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--panel-line); }
+  .icon-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+  header.masthead { text-align: center; z-index: 2; }
+  .kicker { text-transform: uppercase; letter-spacing: .22em; font-size: 12px; font-weight: 700; color: var(--calyx-deep); margin-bottom: 6px; }
+  h1 { font-family: var(--font-display); font-size: clamp(30px, 6vw, 52px); margin: 0; line-height: .98; text-wrap: balance; color: var(--ink); }
+  h1 .dot { color: var(--tomato); }
+  .tagline { margin: 8px auto 0; max-width: 48ch; color: var(--ink-soft); font-size: 15px; }
+
+  .settings { width: 100%; max-width: 1080px; z-index: 3; overflow: hidden; max-height: 0; opacity: 0; transition: max-height .4s ease, opacity .3s ease; }
+  .settings.open { max-height: 680px; opacity: 1; }
+  .settings .card { padding: 22px 24px; }
+  .settings h2 { margin-top: 0; }
+  .set-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px 26px; }
+  @media (max-width: 720px){ .set-grid{ grid-template-columns: 1fr; } }
+  .set-block .blk-title { font-family: var(--font-display); font-size: 13px; margin: 0 0 10px; color: var(--ink); }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 .field { flex: 1; margin-bottom: 0; }
+  input[type="number"], input[type="time"], input[type="text"] {
+    font-family: var(--font-body); font-size: 14px; color: var(--ink);
+    background: var(--wall); border: 1px solid var(--panel-line); border-radius: 10px; padding: 9px 11px;
+  }
+  input:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
+  .set-actions { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+  .saved-note { font-size: 13px; color: var(--calyx-deep); opacity: 0; transition: opacity .3s; font-family: var(--font-display); }
+  .saved-note.show { opacity: 1; }
+
+  .layout { width: 100%; max-width: 1080px; z-index: 2; display: grid; grid-template-columns: 1fr minmax(320px, 420px) 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 940px){ .layout{ grid-template-columns: 1fr; max-width: 460px; } }
+
+  .card { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 22px; padding: 20px; box-shadow: 0 10px 28px var(--shadow); }
+  .card h2 { font-family: var(--font-display); font-size: 15px; margin: 0 0 14px; letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
+
+  .console { text-align: center; padding-top: 8px; }
+  .mode-pill {
+    display: inline-flex; align-items:center; gap:8px; font-family: var(--font-display); font-size: 13px;
+    letter-spacing: .16em; text-transform: uppercase; padding: 7px 16px; border-radius: 999px; margin-bottom: 8px;
+    background: color-mix(in srgb, var(--tomato) 14%, transparent); color: var(--tomato-deep);
+    border: 1px solid color-mix(in srgb, var(--tomato) 34%, transparent); transition: all .4s ease;
+  }
+  .mode-pill.break { background: color-mix(in srgb, var(--calyx) 16%, transparent); color: var(--calyx-deep); border-color: color-mix(in srgb, var(--calyx) 40%, transparent); }
+  .mode-pill .blip { width:8px; height:8px; border-radius:50%; background: currentColor; }
+
+  .tomato-wrap { position: relative; width: 300px; height: 300px; margin: 2px auto 4px; }
+  .tomato-wrap svg { width: 100%; height: 100%; display:block; overflow: visible; }
+  .ring-track { fill: none; stroke: color-mix(in srgb, var(--ink) 12%, transparent); stroke-width: 11; }
+  .ring-prog { fill: none; stroke: var(--tomato); stroke-width: 11; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 150px 150px; transition: stroke-dashoffset .95s linear, stroke .5s ease; }
+  .console.break .ring-prog { stroke: var(--calyx); }
+
+  .tomato-body { fill: var(--tomato); transition: fill .5s ease; transform-box: fill-box; transform-origin: center bottom; }
+  .tomato-body.pop1 { animation: squish .62s ease; }
+  @keyframes squish { 0%,100%{ transform: scale(1) } 30%{ transform: scale(1.08,.93) } 62%{ transform: scale(.96,1.05) } }
+  .tomato-shade { fill: var(--tomato-deep); opacity:.28; }
+  .tomato-hi { fill: var(--tomato-hi); opacity:.7; }
+  .calyx { fill: var(--calyx); } .calyx-d { fill: var(--calyx-deep); }
+  .face { stroke: #3a1712; stroke-width: 5; stroke-linecap: round; fill:none; }
+  .cheek { fill: #F58C7E; opacity:.55; }
+  .eye { fill: #3a1712; transform-box: fill-box; transform-origin: center; animation: blink 6s ease-in-out infinite; }
+  .eye.r { animation-delay: .05s; }
+  .sweat { fill: var(--sky); opacity: 0; transform-box: fill-box; transform-origin: center top; }
+  .warn .sweat, .final .sweat { opacity: 1; animation: drip2 1.3s ease-in infinite; }
+
+  .bob { transform-box: fill-box; transform-origin: 150px 170px; }
+  .running .bob { animation: sway 4s ease-in-out infinite; }
+  .paused .bob { animation: none; }
+  .final .bob { animation: pulse 1s ease-in-out infinite; }
+  .calyx-grp { transform-box: fill-box; transform-origin: 150px 90px; }
+  .running .calyx-grp { animation: wiggle 4s ease-in-out infinite; }
+  @keyframes sway { 0%,100%{ transform: translateY(0) rotate(-1.6deg) } 50%{ transform: translateY(-8px) rotate(1.6deg) } }
+  @keyframes pulse { 0%,100%{ transform: scale(1) } 50%{ transform: scale(1.055) } }
+  @keyframes wiggle { 0%,100%{ transform: rotate(2.5deg) } 50%{ transform: rotate(-2.5deg) } }
+  @keyframes blink { 0%,90%,100%{ transform: scaleY(1) } 94%{ transform: scaleY(.12) } }
+  @keyframes drip2 { 0%{ transform: translateY(0); opacity:.9 } 100%{ transform: translateY(12px); opacity:0 } }
+
+  .clock {
+    font-family: var(--font-display); font-variant-numeric: tabular-nums; font-size: clamp(46px, 12vw, 66px);
+    line-height: 1; color: var(--ink); letter-spacing: .01em; position: absolute; inset: 0;
+    display:flex; align-items:center; justify-content:center; transform: translateY(16px); opacity: .6;
+    pointer-events:none; text-shadow: 0 1px 0 color-mix(in srgb, var(--panel) 55%, transparent);
+  }
+
+  .controls { display:flex; gap: 10px; justify-content:center; margin-top: 12px; flex-wrap: wrap; }
+  button.act {
+    font-family: var(--font-display); font-size: 15px; cursor: pointer; border-radius: 14px; padding: 12px 20px;
+    border: 1px solid transparent; color: #fff; background: var(--tomato); box-shadow: 0 4px 0 var(--tomato-deep);
+    transition: transform .08s ease, filter .15s ease;
+  }
+  button.act:hover { filter: brightness(1.05); }
+  button.act:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--tomato-deep); }
+  button.ghost { background: transparent; color: var(--ink); border-color: var(--panel-line); box-shadow: 0 4px 0 var(--panel-line); }
+  button.ghost:active { box-shadow: 0 1px 0 var(--panel-line); }
+  button.act:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+
+  .meta-row { display:flex; justify-content:center; gap: 18px; margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+  .meta-row b { color: var(--ink); font-family: var(--font-display); }
+
+  .checkin { display:flex; gap:14px; align-items:center; padding: 14px 0; border-bottom: 1px dashed var(--panel-line); }
+  .checkin:last-child { border-bottom: 0; }
+  .checkin .time { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-size: 15px; background: var(--wall); border:1px solid var(--panel-line); border-radius: 12px; padding: 10px 6px; min-width: 82px; text-align:center; color: var(--ink); line-height: 1; }
+  .checkin .txt { font-size: 13.5px; color: var(--ink-soft); line-height:1.4; }
+  .checkin.next .time { background: var(--marigold); border-color: var(--marigold); color: #4a2f00; }
+  .checkin.done { opacity:.5; } .checkin.done .txt { text-decoration: line-through; }
+  .now-line { font-size: 12px; color: var(--ink-soft); margin-top: 14px; text-align:center; }
+
+  .quote { font-size: 17px; line-height: 1.45; color: var(--ink); min-height: 74px; }
+  .quote::before { content:"\201C"; font-family: var(--font-display); font-size: 30px; color: var(--tomato); line-height:0; margin-right:2px; vertical-align:-2px; }
+  .quote::after  { content:"\201D"; font-family: var(--font-display); font-size: 30px; color: var(--tomato); line-height:0; margin-left:2px; vertical-align:-8px; }
+  .cite { text-align: right; margin-top: 10px; font-family: var(--font-display); font-size: 13px; color: var(--ink-soft); letter-spacing: .04em; }
+  .cite::before { content: "\2022  "; color: var(--tomato); }
+  .tip { margin-top: 16px; background: color-mix(in srgb, var(--calyx) 12%, transparent); border:1px solid color-mix(in srgb, var(--calyx) 30%, transparent); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--ink); line-height:1.45; }
+  .tip .lbl { font-family: var(--font-display); font-size:11px; text-transform:uppercase; letter-spacing:.13em; color: var(--calyx-deep); display:block; margin-bottom:5px; }
+
+  /* T-Rex: calm, seated bottom-right, reads mostly, occasional in-place actions */
+  .trex { position:absolute; bottom:10px; right:6%; width:150px; height:118px; z-index:4; }
+  .trex svg { width:100%; height:100%; overflow:visible; display:block; }
+  .trex-inner { transform-box: fill-box; transform-origin: center bottom; transition: transform .6s ease; }
+  .watering .trex-inner { transform: rotate(7deg); }
+  .rex { fill: var(--calyx); } .rex-d { fill: var(--calyx-deep); }
+  .rex-belly { fill: color-mix(in srgb, var(--calyx) 42%, #fff); }
+  .rex-eye-w { fill: #fff; } .rex-eye { fill:#22321f; }
+  .rex-eye-closed { stroke:#22321f; stroke-width:2.4; fill:none; stroke-linecap:round; opacity:0; }
+  .rex-mouth { stroke:#22321f; stroke-width:2.2; fill:none; stroke-linecap:round; }
+  .rex-plate { fill: var(--calyx-deep); }
+  .trex-shadow { fill: rgba(0,0,0,.16); }
+  .tail { transform-box: fill-box; transform-origin: right center; animation: tail 4.6s ease-in-out infinite; }
+  @keyframes tail { 0%,100%{ transform: rotate(-3deg) } 50%{ transform: rotate(4deg) } }
+  .rex-arm { transform-box: fill-box; transform-origin: left center; }
+  .waving .rex-arm { animation: wave .6s ease-in-out infinite; }
+  @keyframes wave { 0%,100%{ transform: rotate(6deg) } 50%{ transform: rotate(-34deg) } }
+  .book, .can, .stream, .zzz { opacity: 0; }
+  .reading .book { opacity: 1; }
+  .watering .can { opacity: 1; }
+  .watering .stream line { opacity:.85; animation: pour 1s linear infinite; transform-box: fill-box; }
+  .watering .stream line:nth-child(2){ animation-delay:.33s; } .watering .stream line:nth-child(3){ animation-delay:.66s; }
+  @keyframes pour { 0%{ opacity:0; transform: translateY(-3px) } 30%{ opacity:.85 } 100%{ opacity:0; transform: translateY(11px) } }
+  .sprout-leaf { transform-box: fill-box; transform-origin: bottom center; transition: transform .6s ease; }
+  .watering .sprout-leaf { transform: scale(1.12) translateY(-2px); }
+  .napping .rex-eye, .napping .rex-eye-w { opacity: 0; }
+  .napping .rex-eye-closed { opacity: 1; }
+  .napping .zzz { opacity: 1; animation: floatz 2.8s ease-in-out infinite; transform-box: fill-box; }
+  @keyframes floatz { 0%{ transform: translateY(0); opacity:.15 } 45%{ opacity:1 } 100%{ transform: translateY(-13px); opacity:0 } }
+
+  /* edge alert */
+  .edge-alert { position: fixed; inset: 0; pointer-events: none; z-index: 40; opacity: 0; transition: opacity .3s; }
+  .edge-alert.on { opacity: 1; animation: edge 1.1s ease-in-out infinite; }
+  @keyframes edge {
+    0%,100%{ box-shadow: inset 0 0 0px 0px color-mix(in srgb, var(--tomato) 0%, transparent); }
+    50%    { box-shadow: inset 0 0 130px 26px color-mix(in srgb, var(--tomato) 55%, transparent); }
+  }
+
+  /* modal */
+  .scrim { position: fixed; inset: 0; background: rgba(24,12,9,.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+  .scrim[hidden] { display: none; }
+  .modal { max-width: 430px; text-align: center; animation: pop .3s ease; }
+  .m-emoji { font-size: 46px; line-height: 1; margin-bottom: 6px; }
+  .modal h2 { display:block; font-family: var(--font-display); font-size: 24px; margin: 4px 0 10px; color: var(--ink); }
+  .modal p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
+  .m-actions { display:flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .toast-wrap { position: fixed; left:50%; bottom: 26px; transform: translateX(-50%); z-index: 50; display:flex; flex-direction:column; gap:10px; align-items:center; width: min(92vw, 460px); }
+  .toast { background: var(--ink); color: var(--wall); border-radius: 16px; padding: 14px 18px; box-shadow: 0 14px 34px rgba(0,0,0,.34); font-size: 15px; line-height:1.35; display:flex; gap:12px; align-items:center; animation: pop .35s ease; border: 2px solid var(--tomato); }
+  .toast.calm { border-color: var(--calyx); } .toast.bell { border-color: var(--marigold); }
+  .toast b { font-family: var(--font-display); }
+  @keyframes pop { from{ transform: translateY(14px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .running .bob, .running .calyx-grp, .final .bob, .eye, .tail,
+    .waving .rex-arm, .napping .zzz, .watering .stream line, .edge-alert.on, .toast { animation: none; }
+    .trex-inner, .sprout-leaf { transition: none; }
+  }
+</style>
+
+<div class="stage" id="stage">
+
+  <svg class="room-art" viewBox="0 0 88 110" aria-hidden="true">
+    <rect x="4" y="4" width="80" height="102" rx="4" fill="var(--marigold)"/>
+    <rect x="11" y="11" width="66" height="88" rx="2" fill="var(--wall)"/>
+    <circle cx="33" cy="40" r="11" fill="var(--tomato)"/>
+    <path d="M11 99 L38 58 L55 80 L67 63 L77 99 Z" fill="var(--calyx)"/>
+  </svg>
+  <svg class="lamp" viewBox="0 0 70 156" aria-hidden="true">
+    <path d="M35 156 L35 70" stroke="var(--ink-soft)" stroke-width="4"/>
+    <path d="M12 66 L58 66 L48 30 L22 30 Z" fill="var(--marigold)"/>
+    <ellipse cx="35" cy="72" rx="30" ry="9" fill="var(--lamp)" opacity=".7"/>
+  </svg>
+  <svg class="plant" id="plant" viewBox="0 0 118 176" aria-hidden="true">
+    <path d="M44 176 L40 118 L78 118 L74 176 Z" fill="var(--tomato-deep)" opacity=".85"/>
+    <path d="M59 118 C59 68 30 68 26 40 C59 52 59 84 59 118" fill="var(--calyx)"/>
+    <path d="M59 118 C59 60 94 64 98 34 C63 48 59 84 59 118" fill="var(--calyx-deep)"/>
+  </svg>
+
+  <!-- T-Rex -->
+  <div class="trex" id="trex">
+    <svg viewBox="0 0 175 118" aria-hidden="true">
+      <ellipse class="trex-shadow" cx="88" cy="112" rx="66" ry="6"/>
+      <!-- his own little potted sprout (stays put while he pours) -->
+      <g>
+        <path class="rex-d" d="M147 112 L144 96 L168 96 L165 112 Z"/>
+        <g class="sprout-leaf">
+          <path class="rex" d="M156 96 C156 78 145 77 141 66 C158 70 158 84 156 96 Z"/>
+          <path class="rex" d="M156 96 C156 76 167 75 171 64 C156 70 156 84 156 96 Z"/>
+        </g>
+      </g>
+      <g class="trex-inner">
+        <!-- tail -->
+        <path class="tail rex" d="M46 98 Q12 100 5 82 Q11 93 25 92 Q36 86 48 86 Z"/>
+        <!-- body / haunch -->
+        <path class="rex" d="M42 100 Q33 60 68 52 Q104 46 114 80 Q119 105 88 106 Q58 107 42 100 Z"/>
+        <ellipse class="rex-belly" cx="74" cy="82" rx="20" ry="15"/>
+        <!-- feet -->
+        <ellipse class="rex-d" cx="66" cy="105" rx="13" ry="6"/>
+        <ellipse class="rex-d" cx="94" cy="106" rx="13" ry="6"/>
+        <!-- back plates -->
+        <path class="rex-plate" d="M58 55 l6 -11 l7 10 z"/>
+        <path class="rex-plate" d="M73 50 l6 -12 l7 11 z"/>
+        <path class="rex-plate" d="M89 52 l6 -10 l7 9 z"/>
+        <!-- head -->
+        <path class="rex" d="M96 62 Q92 34 119 32 Q148 30 150 55 Q151 71 131 73 Q106 73 96 65 Z"/>
+        <path class="rex-mouth" d="M127 62 Q137 66 147 60"/>
+        <circle class="rex-eye-w" cx="123" cy="47" r="6.5"/>
+        <circle class="rex-eye" cx="125" cy="47" r="3.2"/>
+        <path class="rex-eye-closed" d="M118 47 q5 5 10 0"/>
+        <!-- tiny arm -->
+        <path class="rex-arm rex" d="M100 76 q11 0 16 8 q-2 4 -6 3 q-4 -6 -13 -6 z"/>
+        <!-- book (reading) -->
+        <g class="book">
+          <path d="M92 80 L120 76 L120 95 L92 99 Z" fill="var(--marigold)"/>
+          <path d="M120 76 L126 78 L126 97 L120 95 Z" fill="#c98a2e"/>
+          <path d="M97 84 L115 81 M97 89 L115 86" stroke="#a5661e" stroke-width="1.6"/>
+        </g>
+        <!-- watering can (watering) -->
+        <g class="can">
+          <rect x="98" y="74" width="22" height="18" rx="4" class="rex-d"/>
+          <path d="M119 78 Q135 74 146 86" fill="none" stroke="var(--calyx-deep)" stroke-width="4.5"/>
+          <path d="M100 74 Q109 63 118 74" fill="none" stroke="var(--calyx-deep)" stroke-width="3.5"/>
+        </g>
+        <g class="stream" stroke="var(--sky)" stroke-width="2.6" stroke-linecap="round">
+          <line x1="149" y1="88" x2="150" y2="94"/>
+          <line x1="152" y1="89" x2="153" y2="95"/>
+          <line x1="147" y1="90" x2="148" y2="96"/>
+        </g>
+        <text class="zzz" x="150" y="30" font-size="14" fill="var(--ink-soft)">z</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="toolbar">
+    <button class="icon-btn" id="setBtn" title="Adjust the timer and check-ins">⚙️ Settings</button>
+    <button class="icon-btn" id="soundBtn" title="Toggle sound">🔔 Sound: on</button>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙 Night</button>
+  </div>
+
+  <header class="masthead">
+    <div class="kicker">A focus timer with a soft spot</div>
+    <h1>The Big Comfy Tomato<span class="dot">.</span></h1>
+    <p class="tagline">Twenty-five minutes on the couch of concentration, ten minutes of Clock Stretch. The tomato keeps time. You keep going.</p>
+  </header>
+
+  <section class="settings" id="settings" aria-label="Settings">
+    <div class="card">
+      <h2>Set Your Rhythm</h2>
+      <div class="set-grid">
+        <div class="set-block">
+          <p class="blk-title">Timer lengths</p>
+          <div class="row2">
+            <div class="field"><label for="focusMin">Focus (min)</label><input type="number" id="focusMin" min="1" max="180" value="25"></div>
+            <div class="field"><label for="breakMin">Break (min)</label><input type="number" id="breakMin" min="1" max="120" value="10"></div>
+          </div>
+          <div class="set-actions" style="margin-top:16px">
+            <button class="act" id="saveBtn">Save changes</button>
+            <span class="saved-note" id="savedNote">Saved. The tomato adjusts.</span>
+          </div>
+        </div>
+        <div class="set-block">
+          <p class="blk-title">Daily check-ins (clear a time to skip it)</p>
+          <div class="row2"><div class="field" style="max-width:120px"><label for="c0t">Time</label><input type="time" id="c0t" value="11:00"></div><div class="field"><label for="c0l">Nudge</label><input type="text" id="c0l"></div></div>
+          <div class="row2" style="margin-top:10px"><div class="field" style="max-width:120px"><label for="c1t">Time</label><input type="time" id="c1t" value="13:30"></div><div class="field"><label for="c1l">Nudge</label><input type="text" id="c1l"></div></div>
+          <div class="row2" style="margin-top:10px"><div class="field" style="max-width:120px"><label for="c2t">Time</label><input type="time" id="c2t" value="15:30"></div><div class="field"><label for="c2l">Nudge</label><input type="text" id="c2l"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <section class="card" aria-label="Today's check-ins">
+      <h2>Today's Check-Ins</h2>
+      <div id="checkins"></div>
+      <div class="now-line" id="nowLine">Checking the clock&hellip;</div>
+    </section>
+
+    <section class="card console running paused" id="console">
+      <div class="mode-pill" id="modePill"><span class="blip"></span> <span id="modeText">Focus</span></div>
+      <div class="tomato-wrap">
+        <svg viewBox="0 0 300 300" role="img" aria-label="A tomato that keeps the time">
+          <circle class="ring-track" cx="150" cy="150" r="132"/>
+          <circle class="ring-prog" id="ring" cx="150" cy="150" r="132" stroke-dasharray="829.4" stroke-dashoffset="0"/>
+          <g class="bob">
+            <ellipse class="tomato-shade" cx="150" cy="254" rx="70" ry="12"/>
+            <path class="tomato-body" d="M150 78 C205 78 232 120 232 165 C232 214 197 246 150 246 C103 246 68 214 68 165 C68 120 95 78 150 78 Z"/>
+            <ellipse class="tomato-hi" cx="118" cy="132" rx="24" ry="16" transform="rotate(-25 118 132)"/>
+            <g class="calyx-grp">
+              <path class="calyx" d="M150 92 C142 70 120 62 108 66 C124 70 132 82 138 96 Z"/>
+              <path class="calyx" d="M150 92 C158 70 180 62 192 66 C176 70 168 82 162 96 Z"/>
+              <path class="calyx-d" d="M150 96 C146 74 132 62 150 54 C168 62 154 74 150 96 Z"/>
+              <circle class="calyx-d" cx="150" cy="88" r="6"/>
+            </g>
+            <g id="face">
+              <circle class="eye" cx="126" cy="160" r="7"/>
+              <circle class="eye r" cx="174" cy="160" r="7"/>
+              <ellipse class="cheek" cx="112" cy="182" rx="12" ry="8"/>
+              <ellipse class="cheek" cx="188" cy="182" rx="12" ry="8"/>
+              <path class="face" id="mouth" d="M128 186 Q150 202 172 186"/>
+              <path class="sweat" d="M206 150 q6 9 0 16 q-6 -7 0 -16 z"/>
+            </g>
+          </g>
+        </svg>
+        <div class="clock" id="clock">25:00</div>
+      </div>
+      <div class="controls">
+        <button class="act" id="startBtn">Start</button>
+        <button class="act ghost" id="skipBtn">Skip &rarr;</button>
+        <button class="act ghost" id="resetBtn">Reset</button>
+      </div>
+      <div class="meta-row">
+        <span>Tomatoes today: <b id="count">0</b></span>
+        <span>Round: <b id="round">1</b></span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Words for the moment">
+      <h2>Between You &amp; The Tomato</h2>
+      <div class="quote" id="quote">Loading a thought worth having&hellip;</div>
+      <div class="cite" id="cite">the tomato</div>
+      <div class="tip">
+        <span class="lbl" id="tipName">For the break</span>
+        <span id="tipText">Stand up. The couch has been holding you hostage.</span>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="edge-alert" id="edgeAlert" aria-hidden="true"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <div class="scrim" id="scrim" hidden>
+    <div class="card modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="m-emoji" id="mEmoji">🍅</div>
+      <h2 id="mTitle">Pencils down.</h2>
+      <p id="mBody"></p>
+      <div class="m-actions">
+        <button class="act" id="mGo">Start my break</button>
+        <button class="act ghost" id="mHold">Give me a minute</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DEFAULTS = {
+    focus: 25, brk: 10,
+    checkins: [
+      { time:"11:00", label:"Mid-morning gut check. Stand, roll the shoulders, look at the actual list." },
+      { time:"13:30", label:"Lunch. A real one, away from the desk. The pixels will keep." },
+      { time:"15:30", label:"3:30 slump patrol. Water and one lap around the room before the wall hits." }
+    ]
+  };
+
+  // real, attributed quotes
+  var quotes = [
+    { q:"It is not enough to be busy. The question is what we are busy about.", who:"Henry David Thoreau" },
+    { q:"You will never find time for anything. If you want time, you must make it.", who:"Charles Buxton" },
+    { q:"Amateurs sit and wait for inspiration. The rest of us just get up and go to work.", who:"Stephen King" },
+    { q:"Inspiration exists, but it has to find you working.", who:"Pablo Picasso" },
+    { q:"Nothing will work unless you do.", who:"Maya Angelou" },
+    { q:"You can't use up creativity. The more you use, the more you have.", who:"Maya Angelou" },
+    { q:"Almost everything will work again if you unplug it for a few minutes, including you.", who:"Anne Lamott" },
+    { q:"Great things are done by a series of small things brought together.", who:"Vincent van Gogh" },
+    { q:"Concentration is the secret of strength.", who:"Ralph Waldo Emerson" },
+    { q:"Well done is better than well said.", who:"Benjamin Franklin" },
+    { q:"The way to get started is to quit talking and begin doing.", who:"Walt Disney" },
+    { q:"Take rest. A field that has rested gives a bountiful crop.", who:"Ovid" },
+    { q:"Either you run the day, or the day runs you.", who:"Jim Rohn" },
+    { q:"Beware the barrenness of a busy life.", who:"Socrates" },
+    { q:"It always seems impossible until it's done.", who:"Nelson Mandela" },
+    { q:"Absorb what is useful, discard what is not, add what is uniquely your own.", who:"Bruce Lee" },
+    { q:"Simplicity is the ultimate sophistication.", who:"Leonardo da Vinci" },
+    { q:"Do the hard jobs first. The easy jobs will take care of themselves.", who:"Dale Carnegie" },
+    { q:"Smile, breathe, and go slowly.", who:"Thich Nhat Hanh" },
+    { q:"The secret of getting ahead is getting started.", who:"Mark Twain (attributed)" }
+  ];
+
+  // real nervous-system regulation tips
+  var breakTips = [
+    { name:"Physiological sigh", how:"Two short inhales through the nose, then one long, slow exhale through the mouth. Repeat three times to bring the heart rate down fast." },
+    { name:"Extended exhale", how:"Breathe so the exhale lasts longer than the inhale. A longer exhale nudges your body out of fight-or-flight." },
+    { name:"Box breathing", how:"In for 4, hold for 4, out for 4, hold for 4. Two or three rounds steadies a racing mind." },
+    { name:"5-4-3-2-1 grounding", how:"Name 5 things you see, 4 you hear, 3 you can touch, 2 you smell, 1 you taste. It pulls you out of the spiral and into the room." },
+    { name:"Long-distance vision", how:"Look at the farthest point you can find for 30 seconds. Wide, distant focus quietly lowers the stress response." },
+    { name:"Affect labeling", how:"Say what you're feeling in plain words, out loud or on paper. Naming a feeling calms the alarm part of the brain." },
+    { name:"Vagal hum", how:"Hum or sigh out loud for a few slow breaths. The vibration gently tones the vagus nerve that runs your calm." },
+    { name:"Feet on the floor", how:"Plant both feet flat and feel the contact with the ground. Notice the weight. It brings you back to now." },
+    { name:"Shake it out", how:"Stand and shake your hands, arms, and legs for 20 seconds. It literally discharges held tension from the body." },
+    { name:"Get daylight", how:"Move to a window or step outside. Natural light helps reset cortisol and your body clock, especially mid-afternoon." },
+    { name:"Soften the armor", how:"Drop your shoulders, unclench your jaw, loosen your hands. Do a slow scan for where you've been bracing." }
+  ];
+
+  // ---------- settings ----------
+  var SKEY = "bigComfyTomato.settings";
+  function clampNum(v,min,max,dflt){ v=parseInt(v,10); if(isNaN(v)) return dflt; return Math.max(min,Math.min(max,v)); }
+  function loadSettings(){
+    try { var raw=localStorage.getItem(SKEY); if(raw){ var s=JSON.parse(raw);
+      return { focus:clampNum(s.focus,1,180,25), brk:clampNum(s.brk,1,120,10), checkins:(s.checkins||DEFAULTS.checkins).slice(0,3) }; } } catch(e){}
+    return JSON.parse(JSON.stringify(DEFAULTS));
+  }
+  function saveSettings(s){ try{ localStorage.setItem(SKEY, JSON.stringify(s)); }catch(e){} }
+  var settings = loadSettings();
+
+  // ---------- state ----------
+  var FOCUS=settings.focus*60, BREAK=settings.brk*60, CIRC=2*Math.PI*132;
+  var checkinDefs=[], mode="focus", remaining=FOCUS, running=false, tickId=null;
+  var count=0, round=1, soundOn=true, lastQuote=-1, lastTip=-1, firedToday={};
+  var halfFlag=false, warned60=false, notifyAsked=false;
+
+  var $=function(id){ return document.getElementById(id); };
+  var clockEl=$("clock"), ringEl=$("ring"), consoleEl=$("console"), modePill=$("modePill"), modeText=$("modeText"),
+      mouth=$("mouth"), startBtn=$("startBtn"), skipBtn=$("skipBtn"), resetBtn=$("resetBtn"), countEl=$("count"),
+      roundEl=$("round"), quoteEl=$("quote"), citeEl=$("cite"), tipName=$("tipName"), tipText=$("tipText"),
+      toasts=$("toasts"), checkinsEl=$("checkins"), nowLine=$("nowLine"), soundBtn=$("soundBtn"), themeBtn=$("themeBtn"),
+      setBtn=$("setBtn"), settingsEl=$("settings"), focusMin=$("focusMin"), breakMin=$("breakMin"), saveBtn=$("saveBtn"),
+      savedNote=$("savedNote"), edgeAlert=$("edgeAlert"), tomatoBody=document.querySelector(".tomato-body"),
+      scrim=$("scrim"), mEmoji=$("mEmoji"), mTitle=$("mTitle"), mBody=$("mBody"), mGo=$("mGo"), mHold=$("mHold"),
+      trex=$("trex"), plant=$("plant");
+  var cT=[$("c0t"),$("c1t"),$("c2t")], cL=[$("c0l"),$("c1l"),$("c2l")];
+  ringEl.setAttribute("stroke-dasharray", CIRC.toFixed(1));
+
+  // ---------- audio + notifications ----------
+  var actx=null;
+  function beep(kind){
+    if(!soundOn) return;
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      var seq = kind==="bell"?[660,880,990] : kind==="calm"?[523,392] : kind==="warn"?[740,740] : [784,988];
+      var t=actx.currentTime;
+      seq.forEach(function(f,i){ var o=actx.createOscillator(), g=actx.createGain(); o.type="sine"; o.frequency.value=f;
+        o.connect(g); g.connect(actx.destination); var s=t+i*0.16; g.gain.setValueAtTime(0.0001,s);
+        g.gain.exponentialRampToValueAtTime(0.18,s+0.03); g.gain.exponentialRampToValueAtTime(0.0001,s+0.32);
+        o.start(s); o.stop(s+0.34); });
+    }catch(e){}
+  }
+  function ensureNotify(){ if(notifyAsked) return; notifyAsked=true;
+    try{ if("Notification" in window && Notification.permission==="default"){ Notification.requestPermission().catch(function(){}); } }catch(e){}
+  }
+  function notify(title,body){
+    try{ if("Notification" in window && Notification.permission==="granted"){ new Notification(title,{ body:body, silent:!soundOn }); } }catch(e){}
+  }
+
+  // ---------- helpers ----------
+  function fmt(s){ var m=Math.floor(s/60), ss=s%60; return (m<10?"0":"")+m+":"+(ss<10?"0":"")+ss; }
+  function total(){ return mode==="focus"?FOCUS:BREAK; }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function to12(hh,mm){ var ap=hh>=12?"pm":"am", h=hh%12; if(h===0)h=12; return h+":"+pad(mm)+ap; }
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}); }
+
+  function bodyPop(){ if(!tomatoBody) return; tomatoBody.classList.add("pop1"); setTimeout(function(){ tomatoBody.classList.remove("pop1"); },640); }
+
+  function render(){
+    clockEl.textContent = fmt(remaining);
+    ringEl.setAttribute("stroke-dashoffset", (CIRC*(1-remaining/total())).toFixed(1));
+    modeText.textContent = mode==="focus" ? "Focus" : "Clock Stretch";
+    modePill.classList.toggle("break", mode==="break");
+    consoleEl.classList.toggle("break", mode==="break");
+
+    var fin = running && remaining<=10 && remaining>0;
+    var warn = running && remaining<=60 && remaining>10;
+    consoleEl.classList.toggle("final", fin);
+    consoleEl.classList.toggle("warn", warn);
+    edgeAlert.classList.toggle("on", fin);
+    if(running && !halfFlag && remaining>0 && remaining<=Math.floor(total()/2)){ halfFlag=true; bodyPop(); }
+
+    if(!running)             mouth.setAttribute("d","M132 190 Q150 194 168 190");                 // sleepy
+    else if(fin)             mouth.setAttribute("d","M134 190 q8 -7 16 0 q8 7 16 0");             // worried wobble
+    else if(mode==="break")  mouth.setAttribute("d","M126 184 Q150 208 174 184");                // grin
+    else                     mouth.setAttribute("d","M130 190 L170 190");                        // determined
+
+    countEl.textContent=count; roundEl.textContent=round;
+    startBtn.textContent = running ? "Pause" : (remaining===total() ? "Start" : "Resume");
+    consoleEl.classList.toggle("running", running);
+    consoleEl.classList.toggle("paused", !running);
+    document.title = (fin?"⏰ ":"") + (running? fmt(remaining)+" · " : "") + (mode==="focus"?"Focus":"Break") + " · The Big Comfy Tomato";
+  }
+
+  function newQuote(){ var i; do{ i=Math.floor(Math.random()*quotes.length); }while(i===lastQuote&&quotes.length>1); lastQuote=i;
+    quoteEl.textContent=quotes[i].q; citeEl.textContent=quotes[i].who; }
+  function newTip(){ var i; do{ i=Math.floor(Math.random()*breakTips.length); }while(i===lastTip&&breakTips.length>1); lastTip=i;
+    tipName.textContent=breakTips[i].name; tipText.textContent=breakTips[i].how; }
+
+  // ---------- timer ----------
+  function tick(){
+    remaining--;
+    if(remaining===60 && !warned60){ warned60=true;
+      toast("bell","One minute left","Find a stopping point. The tomato is winding down.");
+      notify("One minute left","Find a stopping point on "+(mode==="focus"?"your focus block.":"your break.")); beep("warn"); }
+    if(remaining<=0){ remaining=0; render(); phaseComplete(); return; }
+    render();
+  }
+  function start(){ if(running){ pause(); return; } ensureNotify(); running=true; if(actx&&actx.state==="suspended") actx.resume(); tickId=setInterval(tick,1000); render(); }
+  function pause(){ running=false; clearInterval(tickId); render(); }
+  function reset(){ pause(); remaining=total(); halfFlag=false; warned60=false; render(); }
+
+  function phaseComplete(){
+    pause();
+    if(mode==="focus"){
+      count++; mode="break"; remaining=BREAK; halfFlag=false; warned60=false; newTip(); newQuote();
+      mEmoji.textContent="🍅"; mTitle.textContent="Pencils down. Tomato's off.";
+      mBody.innerHTML="That's tomato #"+count+" in the basket. Time to switch <b>off</b> for "+settings.brk+" minutes. Try this: "+esc(tipText.textContent);
+      mGo.textContent="Start my break"; mHold.textContent="Give me a minute";
+      toast("bell","Tomato done. "+count+" in the basket.","Time to switch off. "+tipText.textContent);
+      beep("bell"); notify("Tomato done ("+count+")","Time to switch off for "+settings.brk+" minutes.");
+    } else {
+      round++; mode="focus"; remaining=FOCUS; halfFlag=false; warned60=false; newQuote();
+      mEmoji.textContent="🌿"; mTitle.textContent="Break's over. Ease back in.";
+      mBody.innerHTML="Round "+round+". A fresh "+settings.focus+"-minute block whenever you're ready. No rush, just start.";
+      mGo.textContent="Back to focus"; mHold.textContent="One more minute";
+      toast("calm","Break's over. Softly does it.","Round "+round+". Back to it when you're ready.");
+      beep("calm"); notify("Break's over","Round "+round+" is ready when you are.");
+    }
+    render(); showModal();
+  }
+  function skip(){ remaining=0; render(); phaseComplete(); }
+
+  function showModal(){ scrim.hidden=false; mGo.focus(); }
+  function hideModal(){ scrim.hidden=true; }
+  mGo.onclick=function(){ hideModal(); start(); };
+  mHold.onclick=function(){ hideModal(); };
+
+  // ---------- toasts ----------
+  function toast(kind,title,body){
+    var el=document.createElement("div"); el.className="toast "+(kind||"");
+    var emoji = kind==="bell"?"🍅":kind==="calm"?"🌿":"🔔";
+    el.innerHTML='<span style="font-size:22px">'+emoji+'</span><span><b>'+esc(title)+'</b><br>'+esc(body)+'</span>';
+    toasts.appendChild(el);
+    setTimeout(function(){ el.style.transition="opacity .5s, transform .5s"; el.style.opacity="0"; el.style.transform="translateY(10px)";
+      setTimeout(function(){ el.remove(); },520); }, 8500);
+  }
+
+  // ---------- check-ins ----------
+  function rebuildCheckinDefs(){
+    checkinDefs=[];
+    settings.checkins.forEach(function(c){ if(!c.time) return; var p=c.time.split(":"), hh=parseInt(p[0],10), mm=parseInt(p[1],10);
+      if(isNaN(hh)||isNaN(mm)) return; checkinDefs.push({ hh:hh, mm:mm, label:c.label||"Check-in time." }); });
+    checkinDefs.sort(function(a,b){ return (a.hh*60+a.mm)-(b.hh*60+b.mm); });
+  }
+  function buildCheckins(){
+    checkinsEl.innerHTML="";
+    if(!checkinDefs.length){ checkinsEl.innerHTML='<div class="checkin"><div class="txt">No check-ins set. Add some in Settings.</div></div>'; return; }
+    checkinDefs.forEach(function(c){ var row=document.createElement("div"); row.className="checkin";
+      row.innerHTML='<div class="time">'+to12(c.hh,c.mm)+'</div><div class="txt">'+esc(c.label)+'</div>'; checkinsEl.appendChild(row); });
+  }
+  function refreshClockUI(){
+    if(!checkinDefs.length){ nowLine.textContent=""; return; }
+    var now=new Date(), mins=now.getHours()*60+now.getMinutes(), nextIdx=-1;
+    checkinDefs.forEach(function(c,idx){ var cm=c.hh*60+c.mm, row=checkinsEl.children[idx]; if(!row) return;
+      row.classList.remove("next","done"); if(mins>cm+1) row.classList.add("done"); else if(nextIdx===-1) nextIdx=idx; });
+    if(nextIdx>=0 && checkinsEl.children[nextIdx]) checkinsEl.children[nextIdx].classList.add("next");
+    var nextTxt = nextIdx>=0 ? "next at "+to12(checkinDefs[nextIdx].hh,checkinDefs[nextIdx].mm) : "all done for today. Nice.";
+    nowLine.textContent = "It's "+to12(now.getHours(),now.getMinutes())+". "+nextTxt;
+  }
+  function checkAlarms(){
+    var now=new Date(), key0=now.toDateString();
+    checkinDefs.forEach(function(c){ if(now.getHours()===c.hh && now.getMinutes()===c.mm){ var key=key0+"|"+c.hh+":"+c.mm;
+      if(!firedToday[key]){ firedToday[key]=true; toast("bell", to12(c.hh,c.mm)+" check-in", c.label);
+        beep("bell"); notify(to12(c.hh,c.mm)+" check-in", c.label); newQuote(); } } });
+  }
+  setInterval(function(){ refreshClockUI(); checkAlarms(); }, 15000);
+
+  // ---------- settings panel ----------
+  function fillSettingsForm(){ focusMin.value=settings.focus; breakMin.value=settings.brk;
+    for(var i=0;i<3;i++){ var c=settings.checkins[i]||{time:"",label:""}; cT[i].value=c.time||""; cL[i].value=c.label||""; } }
+  function applySettings(){
+    settings.focus=clampNum(focusMin.value,1,180,25); settings.brk=clampNum(breakMin.value,1,120,10);
+    settings.checkins=[]; for(var i=0;i<3;i++){ settings.checkins.push({ time:cT[i].value||"", label:cL[i].value.trim() }); }
+    saveSettings(settings); FOCUS=settings.focus*60; BREAK=settings.brk*60; firedToday={};
+    rebuildCheckinDefs(); buildCheckins(); refreshClockUI(); if(!running){ remaining=total(); halfFlag=false; warned60=false; } render();
+    savedNote.classList.add("show"); setTimeout(function(){ savedNote.classList.remove("show"); },2200);
+  }
+  setBtn.onclick=function(){ settingsEl.classList.toggle("open"); if(settingsEl.classList.contains("open")) focusMin.focus(); };
+  saveBtn.onclick=applySettings;
+
+  // ---------- controls ----------
+  startBtn.onclick=start; skipBtn.onclick=skip; resetBtn.onclick=reset;
+  soundBtn.onclick=function(){ soundOn=!soundOn; soundBtn.textContent=soundOn?"🔔 Sound: on":"🔇 Sound: off"; if(soundOn) beep("calm"); };
+  themeBtn.onclick=function(){ var cur=document.documentElement.getAttribute("data-theme");
+    var isDark = cur ? cur==="dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; var next=isDark?"light":"dark";
+    document.documentElement.setAttribute("data-theme", next); themeBtn.textContent = next==="dark" ? "☀️ Day" : "🌙 Night"; };
+  document.addEventListener("keydown",function(e){
+    if(e.code==="Escape" && !scrim.hidden){ hideModal(); return; }
+    var t=e.target, typing = t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA");
+    if(e.code==="Space" && !typing && scrim.hidden){ e.preventDefault(); start(); } });
+
+  // ---------- T-Rex scenes (stays put; reads mostly, rare actions) ----------
+  var acts = [
+    { p:"reading",  t:48000 },
+    { p:"waving",   t:5000  },
+    { p:"reading",  t:58000 },
+    { p:"watering", t:8000  },
+    { p:"reading",  t:52000 },
+    { p:"napping",  t:16000 }
+  ];
+  var ai=0, trexTimer=null;
+  function doAct(){ var a=acts[ai % acts.length]; ai++; trex.className="trex "+a.p; trexTimer=setTimeout(doAct, a.t); }
+  function startTrex(){
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduce){ trex.className="trex reading"; return; }
+    doAct();
+  }
+
+  // ---------- boot ----------
+  fillSettingsForm(); rebuildCheckinDefs(); buildCheckins(); refreshClockUI(); checkAlarms();
+  newQuote(); newTip(); render(); startTrex();
+})();
+</script>
