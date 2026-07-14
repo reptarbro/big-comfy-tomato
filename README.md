@@ -3,12 +3,17 @@
 A cozy Pomodoro focus timer where a tomato keeps the time and a small T-Rex tends the room.
 One self-contained HTML file. No build step, no dependencies, no tracking. Just open it and focus.
 
-> Twenty-five minutes on the couch of concentration, ten minutes of Clock Stretch.
-> The tomato keeps time. You keep going.
+**You set your own intervals.** It opens on a classic 25 minutes of focus and 10 of break, but
+those are just defaults. Change the focus length, the break length, and your daily check-in times
+to whatever fits your day, right in Settings.
+
+> A focus stretch on the couch of concentration, then a Clock Stretch to rest,
+> at whatever lengths fit your day. The tomato keeps time. You keep going.
 
 ## What it does
 
-- **25 / 10 Pomodoro cycles** (fully adjustable in Settings) with focus and break phases.
+- **Focus and break cycles on your own intervals.** Starts at 25 on / 10 off, but you set both
+  (and the daily check-in times) to whatever suits you in Settings.
 - **A tomato that reacts to the countdown.** It stretches at the halfway mark, sweats a little
   in the last minute, and pulses like a heartbeat in the final ten seconds.
 - **Stay-aware alerts.** A one-minute warning (toast, chime, and desktop notification if allowed),
