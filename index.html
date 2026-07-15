@@ -605,10 +605,39 @@
     alarmEl.hidden = false; aOk.focus();
     beep(level===3 ? "alarm" : level===2 ? "warn" : "calm");
     if(level>=2) notify(title, body);
+    if(level===3) startFlash("WIND DOWN");
     alarmTimer = setTimeout(hideAlarm, holdMs);
   }
   function hideAlarm(){ clearTimeout(alarmTimer); alarmEl.hidden = true; }
-  aOk.onclick = hideAlarm;
+  aOk.onclick = function(){ hideAlarm(); stopFlash(); };
+
+  // ---------- window flash (title + icon), for eyes outside the app ----------
+  var flashId=null, favEl=null, ICON_TOMATO=null, ICON_ALARM=null;
+  function emojiIcon(emoji){
+    var c=document.createElement("canvas"); c.width=64; c.height=64;
+    var x=c.getContext("2d"); x.font="52px serif"; x.textAlign="center"; x.textBaseline="middle";
+    x.fillText(emoji,32,36); return c.toDataURL("image/png");
+  }
+  function ensureFav(){
+    if(favEl) return;
+    ICON_TOMATO=emojiIcon("🍅"); ICON_ALARM=emojiIcon("⏰");
+    favEl=document.createElement("link"); favEl.rel="icon"; favEl.href=ICON_TOMATO;
+    document.head.appendChild(favEl);
+  }
+  function startFlash(msg){
+    ensureFav(); stopFlash();
+    var on=false;
+    flashId=setInterval(function(){
+      on=!on;
+      document.title = on ? "⏰ "+msg+" ⏰" : fmt(remaining)+" · The Big Comfy Tomato";
+      favEl.href = on ? ICON_ALARM : ICON_TOMATO;
+    }, 700);
+  }
+  function stopFlash(){
+    if(flashId){ clearInterval(flashId); flashId=null; }
+    if(favEl) favEl.href=ICON_TOMATO;
+  }
+  window.addEventListener("focus", stopFlash);
 
   function render(){
     clockEl.textContent = fmt(remaining);
@@ -631,7 +660,7 @@
     startBtn.textContent = running ? "Pause" : (remaining===total() ? "Start" : "Resume");
     consoleEl.classList.toggle("running", running);
     consoleEl.classList.toggle("paused", !running);
-    document.title = (fin?"⏰ ":"") + (running? fmt(remaining)+" · " : "") + (mode==="focus"?"Focus":"Break") + " · The Big Comfy Tomato";
+    if(!flashId) document.title = (fin?"⏰ ":"") + (running? fmt(remaining)+" · " : "") + (mode==="focus"?"Focus":"Break") + " · The Big Comfy Tomato";
   }
 
   function newQuote(){ var i; do{ i=Math.floor(Math.random()*quotes.length); }while(i===lastQuote&&quotes.length>1); lastQuote=i;
@@ -675,7 +704,7 @@
     render();
   }
   function resetPhaseFlags(){ alertsFired={half:false,five:false,one:false}; emoStep=-1; }
-  function start(){ if(running){ pause(); return; } ensureNotify(); running=true; if(actx&&actx.state==="suspended") actx.resume(); tickId=setInterval(tick,1000); render(); }
+  function start(){ if(running){ pause(); return; } ensureNotify(); stopFlash(); running=true; if(actx&&actx.state==="suspended") actx.resume(); tickId=setInterval(tick,1000); render(); }
   function pause(){ running=false; clearInterval(tickId); render(); }
   function reset(){ pause(); hideAlarm(); remaining=total(); resetPhaseFlags(); render(); }
 
@@ -696,14 +725,14 @@
       toast("calm","Break's over. Softly does it.","Round "+round+". Back to it when you're ready.");
       beep("calm"); notify("Break's over","Round "+round+" is ready when you are.");
     }
-    render(); showModal();
+    render(); showModal(); startFlash("TIME'S UP");
   }
   function skip(){ remaining=0; render(); phaseComplete(); }
 
   function showModal(){ scrim.hidden=false; mGo.focus(); }
   function hideModal(){ scrim.hidden=true; }
   mGo.onclick=function(){ hideModal(); start(); };
-  mHold.onclick=function(){ hideModal(); };
+  mHold.onclick=function(){ hideModal(); stopFlash(); };
 
   // ---------- toasts ----------
   function toast(kind,title,body){
