@@ -217,6 +217,21 @@
   .modal p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
   .m-actions { display:flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+  /* tiered alarm overlay */
+  .alarm { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(24,12,9,.45); backdrop-filter: blur(2px); }
+  .alarm[hidden] { display: none; }
+  .a-card { background: var(--panel); border-radius: 22px; padding: 26px 30px 24px; max-width: 440px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.42); border-top: 8px solid var(--marigold); animation: pop .3s ease; }
+  .alarm.lv2 .a-card { border-top-color: var(--tomato); }
+  .alarm.lv3 .a-card { border-top-color: var(--tomato-deep); animation: pop .3s ease, ringshake .55s ease-in-out .35s 4; }
+  .alarm.lv3 { animation: flashbg 1s ease-in-out infinite; }
+  @keyframes flashbg { 0%,100%{ background: rgba(24,12,9,.45) } 50%{ background: color-mix(in srgb, var(--tomato) 30%, rgba(24,12,9,.5)) } }
+  @keyframes ringshake { 0%,100%{ transform: rotate(0) } 25%{ transform: rotate(-2.4deg) } 75%{ transform: rotate(2.4deg) } }
+  .a-kicker { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .18em; color: var(--ink-soft); margin-bottom: 8px; }
+  .a-emoji { font-size: 44px; line-height: 1; margin-bottom: 8px; }
+  .a-card h2 { display:block; font-family: var(--font-display); font-size: 24px; margin: 0 0 10px; color: var(--ink); }
+  .a-card p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
+  @media (prefers-reduced-motion: reduce) { .alarm.lv3, .alarm.lv3 .a-card { animation: none; } }
+
   .toast-wrap { position: fixed; left:50%; bottom: 26px; transform: translateX(-50%); z-index: 50; display:flex; flex-direction:column; gap:10px; align-items:center; width: min(92vw, 460px); }
   .toast { background: var(--ink); color: var(--wall); border-radius: 16px; padding: 14px 18px; box-shadow: 0 14px 34px rgba(0,0,0,.34); font-size: 15px; line-height:1.35; display:flex; gap:12px; align-items:center; animation: pop .35s ease; border: 2px solid var(--tomato); }
   .toast.calm { border-color: var(--calyx); } .toast.bell { border-color: var(--marigold); }
@@ -366,6 +381,8 @@
               <circle class="calyx-d" cx="150" cy="88" r="6"/>
             </g>
             <g id="face">
+              <path class="face" id="browL" d="" opacity="0" stroke-width="4"/>
+              <path class="face" id="browR" d="" opacity="0" stroke-width="4"/>
               <circle class="eye" cx="126" cy="160" r="7"/>
               <circle class="eye r" cx="174" cy="160" r="7"/>
               <ellipse class="cheek" cx="112" cy="182" rx="12" ry="8"/>
@@ -402,6 +419,16 @@
 
   <div class="edge-alert" id="edgeAlert" aria-hidden="true"></div>
   <div class="toast-wrap" id="toasts"></div>
+
+  <div class="alarm" id="alarm" hidden>
+    <div class="a-card" role="alertdialog" aria-modal="true" aria-labelledby="aTitle">
+      <div class="a-kicker" id="aKicker">Checkpoint</div>
+      <div class="a-emoji" id="aEmoji">🔔</div>
+      <h2 id="aTitle"></h2>
+      <p id="aBody"></p>
+      <button class="act" id="aOk">Got it</button>
+    </div>
+  </div>
 
   <div class="scrim" id="scrim" hidden>
     <div class="card modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -484,7 +511,7 @@
   var FOCUS=settings.focus*60, BREAK=settings.brk*60, CIRC=2*Math.PI*132;
   var checkinDefs=[], mode="focus", remaining=FOCUS, running=false, tickId=null;
   var count=0, round=1, soundOn=true, lastQuote=-1, lastTip=-1, firedToday={};
-  var halfFlag=false, warned60=false, notifyAsked=false;
+  var alertsFired={half:false,five:false,one:false}, notifyAsked=false, emoStep=-1, emoIdx=0;
 
   var $=function(id){ return document.getElementById(id); };
   var clockEl=$("clock"), ringEl=$("ring"), consoleEl=$("console"), modePill=$("modePill"), modeText=$("modeText"),
@@ -494,7 +521,9 @@
       setBtn=$("setBtn"), settingsEl=$("settings"), focusMin=$("focusMin"), breakMin=$("breakMin"), saveBtn=$("saveBtn"),
       savedNote=$("savedNote"), edgeAlert=$("edgeAlert"), tomatoBody=document.querySelector(".tomato-body"),
       scrim=$("scrim"), mEmoji=$("mEmoji"), mTitle=$("mTitle"), mBody=$("mBody"), mGo=$("mGo"), mHold=$("mHold"),
-      trex=$("trex"), plant=$("plant");
+      trex=$("trex"), plant=$("plant"),
+      alarmEl=$("alarm"), aKicker=$("aKicker"), aEmoji=$("aEmoji"), aTitle=$("aTitle"), aBody=$("aBody"), aOk=$("aOk"),
+      browL=$("browL"), browR=$("browR");
   var cT=[$("c0t"),$("c1t"),$("c2t")], cL=[$("c0l"),$("c1l"),$("c2l")];
   ringEl.setAttribute("stroke-dasharray", CIRC.toFixed(1));
 
@@ -504,7 +533,7 @@
     if(!soundOn) return;
     try{
       actx = actx || new (window.AudioContext||window.webkitAudioContext)();
-      var seq = kind==="bell"?[660,880,990] : kind==="calm"?[523,392] : kind==="warn"?[740,740] : [784,988];
+      var seq = kind==="bell"?[660,880,990] : kind==="calm"?[523,392] : kind==="warn"?[740,740] : kind==="alarm"?[988,740,988,740,988,1175] : [784,988];
       var t=actx.currentTime;
       seq.forEach(function(f,i){ var o=actx.createOscillator(), g=actx.createGain(); o.type="sine"; o.frequency.value=f;
         o.connect(g); g.connect(actx.destination); var s=t+i*0.16; g.gain.setValueAtTime(0.0001,s);
@@ -528,6 +557,59 @@
 
   function bodyPop(){ if(!tomatoBody) return; tomatoBody.classList.add("pop1"); setTimeout(function(){ tomatoBody.classList.remove("pop1"); },640); }
 
+  // ---------- emotion engine ----------
+  // m = mouth path; bl/br = eyebrow paths (null = no brows shown)
+  var FOCUS_EMOTIONS = [
+    { n:"determined", m:"M130 190 L170 190",                 bl:"M116 144 L136 150", br:"M184 144 L164 150" },
+    { n:"content",    m:"M130 187 Q150 199 170 187",         bl:null, br:null },
+    { n:"focused",    m:"M134 189 L166 189",                 bl:"M116 147 L136 147", br:"M164 147 L184 147" },
+    { n:"cheerful",   m:"M126 184 Q150 208 174 184",         bl:"M116 144 Q126 138 136 144", br:"M164 144 Q174 138 184 144" },
+    { n:"curious",    m:"M142 187 Q150 196 158 187",         bl:null, br:"M164 141 Q174 135 184 141" },
+    { n:"serene",     m:"M132 188 Q150 196 168 188",         bl:null, br:null },
+    { n:"gritted",    m:"M130 189 q10 4 20 0 q10 -4 20 0",   bl:"M116 144 L136 150", br:"M184 144 L164 150" },
+    { n:"proud",      m:"M132 190 Q154 198 170 184",         bl:null, br:"M164 142 Q174 137 184 142" },
+    { n:"pumped",     m:"M126 183 Q150 211 174 183",         bl:"M116 143 Q126 137 136 143", br:"M164 143 Q174 137 184 143" },
+    { n:"playful",    m:"M128 186 Q142 198 150 190 Q158 198 172 186", bl:null, br:"M164 140 Q174 136 184 140" }
+  ];
+  var BREAK_EMOTIONS = [
+    { n:"grin",   m:"M126 184 Q150 208 174 184", bl:null, br:null },
+    { n:"blissy", m:"M132 188 Q150 198 168 188", bl:"M116 144 Q126 139 136 144", br:"M164 144 Q174 139 184 144" },
+    { n:"cozy",   m:"M130 187 Q150 200 170 187", bl:null, br:null }
+  ];
+  var SLEEPY  = { m:"M132 190 Q150 194 168 190", bl:null, br:null };
+  var WORRIED = { m:"M134 190 q8 -7 16 0 q8 7 16 0", bl:"M116 148 Q126 142 136 146", br:"M164 146 Q174 142 184 148" };
+  function setFace(e){
+    mouth.setAttribute("d", e.m);
+    if(e.bl){ browL.setAttribute("d", e.bl); browL.setAttribute("opacity", 1); } else { browL.setAttribute("opacity", 0); }
+    if(e.br){ browR.setAttribute("d", e.br); browR.setAttribute("opacity", 1); } else { browR.setAttribute("opacity", 0); }
+  }
+  function currentEmotion(){
+    var set = mode==="break" ? BREAK_EMOTIONS : FOCUS_EMOTIONS;
+    return set[emoIdx % set.length];
+  }
+
+  // ---------- tiered alarms ----------
+  var halfwayLines = [
+    "Halfway through and still standing. The second half is where it gets good.",
+    "You've already done the hard part: starting. Keep the thread going.",
+    "Half a tomato down. The momentum is yours now, ride it.",
+    "Middle of the block. Whatever you're on, it's working. Stay with it.",
+    "Halfway. Future you is already grateful. Finish strong."
+  ];
+  var alarmTimer=null;
+  function alarm(level, kicker, emoji, title, body, holdMs){
+    clearTimeout(alarmTimer);
+    alarmEl.className = "alarm lv" + level;
+    aKicker.textContent = kicker; aEmoji.textContent = emoji;
+    aTitle.textContent = title; aBody.textContent = body;
+    alarmEl.hidden = false; aOk.focus();
+    beep(level===3 ? "alarm" : level===2 ? "warn" : "calm");
+    if(level>=2) notify(title, body);
+    alarmTimer = setTimeout(hideAlarm, holdMs);
+  }
+  function hideAlarm(){ clearTimeout(alarmTimer); alarmEl.hidden = true; }
+  aOk.onclick = hideAlarm;
+
   function render(){
     clockEl.textContent = fmt(remaining);
     ringEl.setAttribute("stroke-dashoffset", (CIRC*(1-remaining/total())).toFixed(1));
@@ -540,12 +622,10 @@
     consoleEl.classList.toggle("final", fin);
     consoleEl.classList.toggle("warn", warn);
     edgeAlert.classList.toggle("on", fin);
-    if(running && !halfFlag && remaining>0 && remaining<=Math.floor(total()/2)){ halfFlag=true; bodyPop(); }
 
-    if(!running)             mouth.setAttribute("d","M132 190 Q150 194 168 190");                 // sleepy
-    else if(fin)             mouth.setAttribute("d","M134 190 q8 -7 16 0 q8 7 16 0");             // worried wobble
-    else if(mode==="break")  mouth.setAttribute("d","M126 184 Q150 208 174 184");                // grin
-    else                     mouth.setAttribute("d","M130 190 L170 190");                        // determined
+    if(!running)  setFace(SLEEPY);
+    else if(fin)  setFace(WORRIED);
+    else          setFace(currentEmotion());
 
     countEl.textContent=count; roundEl.textContent=round;
     startBtn.textContent = running ? "Pause" : (remaining===total() ? "Start" : "Resume");
@@ -562,27 +642,54 @@
   // ---------- timer ----------
   function tick(){
     remaining--;
-    if(remaining===60 && !warned60){ warned60=true;
-      toast("bell","One minute left","Find a stopping point. The tomato is winding down.");
-      notify("One minute left","Find a stopping point on "+(mode==="focus"?"your focus block.":"your break.")); beep("warn"); }
+
+    // emotion rotates every 150s of the phase
+    var eStep = Math.floor((total()-remaining)/150);
+    if(eStep !== emoStep){ emoStep = eStep; emoIdx++; }
+
+    if(mode==="focus"){
+      if(!alertsFired.half && total()>=240 && remaining===Math.floor(total()/2)){
+        alertsFired.half=true; bodyPop();
+        alarm(1, "Halfway checkpoint", "🍅", "Halfway there.",
+          halfwayLines[Math.floor(count+round)%halfwayLines.length] + " " + Math.ceil(remaining/60) + " minutes to go.", 7000);
+      }
+      if(!alertsFired.five && total()>=720 && remaining===300){
+        alertsFired.five=true;
+        alarm(2, "Five minutes left", "⏳", "Start looking for a stopping point.",
+          "Five minutes on the clock. Begin wrapping the thread you're on, not starting a new one.", 9000);
+      }
+      if(!alertsFired.one && remaining===60){
+        alertsFired.one=true;
+        alarm(3, "One minute. Wind down.", "⏰", "Land the plane.",
+          "Sixty seconds. Save your work, finish the sentence, park the next step where you'll see it.", 15000);
+      }
+    } else {
+      if(!alertsFired.one && total()>=180 && remaining===60){
+        alertsFired.one=true;
+        alarm(2, "Break's almost over", "🌿", "One minute of couch left.",
+          "Start drifting back. Refill the water on your way if you haven't.", 9000);
+      }
+    }
+
     if(remaining<=0){ remaining=0; render(); phaseComplete(); return; }
     render();
   }
+  function resetPhaseFlags(){ alertsFired={half:false,five:false,one:false}; emoStep=-1; }
   function start(){ if(running){ pause(); return; } ensureNotify(); running=true; if(actx&&actx.state==="suspended") actx.resume(); tickId=setInterval(tick,1000); render(); }
   function pause(){ running=false; clearInterval(tickId); render(); }
-  function reset(){ pause(); remaining=total(); halfFlag=false; warned60=false; render(); }
+  function reset(){ pause(); hideAlarm(); remaining=total(); resetPhaseFlags(); render(); }
 
   function phaseComplete(){
     pause();
     if(mode==="focus"){
-      count++; mode="break"; remaining=BREAK; halfFlag=false; warned60=false; newTip(); newQuote();
+      count++; mode="break"; remaining=BREAK; resetPhaseFlags(); newTip(); newQuote();
       mEmoji.textContent="🍅"; mTitle.textContent="Pencils down. Tomato's off.";
       mBody.innerHTML="That's tomato #"+count+" in the basket. Time to switch <b>off</b> for "+settings.brk+" minutes. Try this: "+esc(tipText.textContent);
       mGo.textContent="Start my break"; mHold.textContent="Give me a minute";
       toast("bell","Tomato done. "+count+" in the basket.","Time to switch off. "+tipText.textContent);
       beep("bell"); notify("Tomato done ("+count+")","Time to switch off for "+settings.brk+" minutes.");
     } else {
-      round++; mode="focus"; remaining=FOCUS; halfFlag=false; warned60=false; newQuote();
+      round++; mode="focus"; remaining=FOCUS; resetPhaseFlags(); newQuote();
       mEmoji.textContent="🌿"; mTitle.textContent="Break's over. Ease back in.";
       mBody.innerHTML="Round "+round+". A fresh "+settings.focus+"-minute block whenever you're ready. No rush, just start.";
       mGo.textContent="Back to focus"; mHold.textContent="One more minute";
@@ -645,7 +752,7 @@
     settings.focus=clampNum(focusMin.value,1,180,25); settings.brk=clampNum(breakMin.value,1,120,10);
     settings.checkins=[]; for(var i=0;i<3;i++){ settings.checkins.push({ time:cT[i].value||"", label:cL[i].value.trim() }); }
     saveSettings(settings); FOCUS=settings.focus*60; BREAK=settings.brk*60; firedToday={};
-    rebuildCheckinDefs(); buildCheckins(); refreshClockUI(); if(!running){ remaining=total(); halfFlag=false; warned60=false; } render();
+    rebuildCheckinDefs(); buildCheckins(); refreshClockUI(); if(!running){ remaining=total(); resetPhaseFlags(); } render();
     savedNote.classList.add("show"); setTimeout(function(){ savedNote.classList.remove("show"); },2200);
   }
   setBtn.onclick=function(){ settingsEl.classList.toggle("open"); if(settingsEl.classList.contains("open")) focusMin.focus(); };
@@ -658,6 +765,7 @@
     var isDark = cur ? cur==="dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; var next=isDark?"light":"dark";
     document.documentElement.setAttribute("data-theme", next); themeBtn.textContent = next==="dark" ? "☀️ Day" : "🌙 Night"; };
   document.addEventListener("keydown",function(e){
+    if(e.code==="Escape" && !alarmEl.hidden){ hideAlarm(); return; }
     if(e.code==="Escape" && !scrim.hidden){ hideModal(); return; }
     var t=e.target, typing = t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA");
     if(e.code==="Space" && !typing && scrim.hidden){ e.preventDefault(); start(); } });
