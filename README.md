@@ -14,10 +14,16 @@ to whatever fits your day, right in Settings.
 
 - **Focus and break cycles on your own intervals.** Starts at 25 on / 10 off, but you set both
   (and the daily check-in times) to whatever suits you in Settings.
-- **A tomato that reacts to the countdown.** It stretches at the halfway mark, sweats a little
-  in the last minute, and pulses like a heartbeat in the final ten seconds.
-- **Stay-aware alerts.** A one-minute warning (toast, chime, and desktop notification if allowed),
-  plus a full-screen edge glow in the final seconds so you catch it from the corner of your eye.
+- **A tomato with a personality arc.** It cycles through ten distinct emotions during a focus
+  block (determined, curious, gritted, proud, and more, eyebrows included), stretches at the
+  halfway mark, sweats in the last minute, and pulses like a heartbeat in the final ten seconds.
+- **Tiered wind-down alarms.** Real screen-taking dialogs, not corner toasts: a motivational
+  checkpoint at halfway, a pressing "find a stopping point" at five minutes, and a high alert at
+  one minute with a flashing backdrop, ringing shake, and urgent tone. Breaks get a gentler
+  one-minute "drift back" version. Tiers auto-skip on short custom blocks so they never stack.
+- **Alerts that reach outside the app.** Desktop notifications, a full-screen edge glow in the
+  final seconds, and a flashing window title and icon ("WIND DOWN" / "TIME'S UP") that keeps
+  blinking in your taskbar until you come back, for when you're working in another window.
 - **An end-of-phase dialog** that tells you, in the app's own voice, that it is time to switch off.
 - **Real daily check-ins** on your actual clock (default 11:00, 1:30, 3:30), each editable.
 - **Rotating quotes** from real people (Angelou, Picasso, van Gogh, Twain, and more).
