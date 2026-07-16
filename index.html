@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Big Comfy Tomato</title>
 <style>
   :root {
@@ -33,12 +35,12 @@
   * { box-sizing: border-box; }
   body { margin: 0; }
   .stage {
-    min-height: 100vh; font-family: var(--font-body); color: var(--ink);
+    min-height: 100vh; min-height: 100dvh; font-family: var(--font-body); color: var(--ink);
     background:
       radial-gradient(140% 100% at 84% 4%, color-mix(in srgb, var(--lamp) 60%, transparent), transparent 42%),
       radial-gradient(120% 90% at 50% 118%, color-mix(in srgb, var(--tomato) 16%, transparent), transparent 55%),
       linear-gradient(180deg, var(--wall) 0%, var(--wall-2) 100%);
-    padding: 22px 20px 96px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 22px clamp(12px, 4vw, 20px) 96px; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 20px; position: relative; overflow: hidden;
   }
 
@@ -70,7 +72,7 @@
   .settings .card { padding: 22px 24px; }
   .settings h2 { margin-top: 0; }
   .set-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px 26px; }
-  @media (max-width: 720px){ .set-grid{ grid-template-columns: 1fr; } }
+  @media (max-width: 720px){ .set-grid{ grid-template-columns: 1fr; } .settings.open{ max-height: 1100px; } }
   .set-block .blk-title { font-family: var(--font-display); font-size: 13px; margin: 0 0 10px; color: var(--ink); }
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .field label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; }
@@ -85,8 +87,8 @@
   .saved-note { font-size: 13px; color: var(--calyx-deep); opacity: 0; transition: opacity .3s; font-family: var(--font-display); }
   .saved-note.show { opacity: 1; }
 
-  .layout { width: 100%; max-width: 1080px; z-index: 2; display: grid; grid-template-columns: 1fr minmax(320px, 420px) 1fr; gap: 22px; align-items: start; }
-  @media (max-width: 940px){ .layout{ grid-template-columns: 1fr; max-width: 460px; } }
+  .layout { width: 100%; max-width: 1080px; z-index: 2; display: grid; grid-template-columns: 1fr minmax(min(320px, 100%), 420px) 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 940px){ .layout{ grid-template-columns: 1fr; max-width: min(460px, 100%); } }
 
   .card { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 22px; padding: 20px; box-shadow: 0 10px 28px var(--shadow); }
   .card h2 { font-family: var(--font-display); font-size: 15px; margin: 0 0 14px; letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
@@ -101,7 +103,7 @@
   .mode-pill.break { background: color-mix(in srgb, var(--calyx) 16%, transparent); color: var(--calyx-deep); border-color: color-mix(in srgb, var(--calyx) 40%, transparent); }
   .mode-pill .blip { width:8px; height:8px; border-radius:50%; background: currentColor; }
 
-  .tomato-wrap { position: relative; width: 300px; height: 300px; margin: 2px auto 4px; }
+  .tomato-wrap { position: relative; width: min(300px, 100%); aspect-ratio: 1; margin: 2px auto 4px; }
   .tomato-wrap svg { width: 100%; height: 100%; display:block; overflow: visible; }
   .ring-track { fill: none; stroke: color-mix(in srgb, var(--ink) 12%, transparent); stroke-width: 11; }
   .ring-prog { fill: none; stroke: var(--tomato); stroke-width: 11; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 150px 150px; transition: stroke-dashoffset .95s linear, stroke .5s ease; }
